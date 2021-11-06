@@ -13,9 +13,12 @@
  */
 package ru.homemadethings.homemadethings.auth.repository;
 
-import ru.homemadethings.homemadethings.auth.model.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
+import ru.homemadethings.homemadethings.auth.model.Role;
+import ru.homemadethings.homemadethings.auth.model.RoleName;
+
+import java.util.Optional;
 
 public interface RoleRepository extends JpaRepository<Role, Long> {
-
+    Optional<Role> findByRole(RoleName roleName);
 }

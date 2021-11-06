@@ -26,5 +26,8 @@ public enum RoleName {
     /**
      * Role user authority role.
      */
-    ROLE_USER
+    ROLE_USER,
+
+
+    ROLE_SELLER
 }

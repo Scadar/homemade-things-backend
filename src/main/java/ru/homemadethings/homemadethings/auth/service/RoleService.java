@@ -13,21 +13,28 @@
  */
 package ru.homemadethings.homemadethings.auth.service;
 
-import ru.homemadethings.homemadethings.auth.model.Role;
-import ru.homemadethings.homemadethings.auth.repository.RoleRepository;
+import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.homemadethings.homemadethings.auth.model.Role;
+import ru.homemadethings.homemadethings.auth.model.RoleName;
+import ru.homemadethings.homemadethings.auth.model.User;
+import ru.homemadethings.homemadethings.auth.repository.RoleRepository;
+import ru.homemadethings.homemadethings.auth.repository.UserRepository;
 
 import java.util.Collection;
+import java.util.Set;
 
 @Service
 public class RoleService {
 
     private final RoleRepository roleRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public RoleService(RoleRepository roleRepository) {
+    public RoleService(RoleRepository roleRepository, UserRepository userRepository) {
         this.roleRepository = roleRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -35,6 +42,31 @@ public class RoleService {
      */
     public Collection<Role> findAll() {
         return roleRepository.findAll();
+    }
+
+    public void addSellerRoleToUser(final Long userId) throws NotFoundException {
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id = " + userId + " not found"));
+
+        Set<Role> userRoles = user.getRoles();
+
+        boolean userHasSellerRole = userRoles
+                .stream()
+                .map(Role::getRole)
+                .anyMatch(role -> role.equals(RoleName.ROLE_SELLER));
+
+        if (userHasSellerRole) {
+            throw new RuntimeException("The user with id " + userId + " already has the role of the seller");
+        }
+
+        Role sellerRole = roleRepository
+                .findByRole(RoleName.ROLE_SELLER)
+                .orElseThrow(() -> new NotFoundException("Role " + RoleName.ROLE_SELLER.name() + " not found"));
+
+        user.addRole(sellerRole);
+
+        userRepository.save(user);
     }
 
 }
