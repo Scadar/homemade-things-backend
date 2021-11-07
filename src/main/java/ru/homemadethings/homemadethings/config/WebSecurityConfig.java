@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ru.homemadethings.homemadethings.auth.config;
+package ru.homemadethings.homemadethings.config;
 
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -42,7 +42,7 @@ import java.util.Collections;
 @Profile("!dev")
 @Configuration
 @EnableWebSecurity(debug = true)
-@EnableJpaRepositories(basePackages = "ru.homemadethings.homemadethings.auth.repository")
+@EnableJpaRepositories(basePackages = "ru.homemadethings.homemadethings")
 @EnableGlobalMethodSecurity(
         securedEnabled = true,
         jsr250Enabled = true,
@@ -105,7 +105,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
-                .antMatchers("/",
+                .antMatchers("/**",
                 		"/favicon.ico",
                         "/**/*.json",
                         "/**/*.xml",
