@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ru.homemadethings.homemadethings.auth.config;
+package ru.homemadethings.homemadethings.config;
 
 import ru.homemadethings.homemadethings.auth.annotation.CurrentUser;
 import org.springframework.context.annotation.Bean;
@@ -33,7 +33,7 @@ public class SwaggerConfig {
         return new Docket(DocumentationType.SWAGGER_2)
                 .ignoredParameterTypes(CurrentUser.class)
                 .select()
-                .apis(RequestHandlerSelectors.basePackage("ru.homemadethings.homemadethings.auth"))
+                .apis(RequestHandlerSelectors.basePackage("ru.homemadethings.homemadethings"))
                 .paths(PathSelectors.regex("/api.*"))
                 .build()
                 .apiInfo(metaInfo());
