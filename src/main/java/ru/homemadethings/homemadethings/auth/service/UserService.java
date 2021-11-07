@@ -13,6 +13,11 @@
  */
 package ru.homemadethings.homemadethings.auth.service;
 
+import javassist.NotFoundException;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 import ru.homemadethings.homemadethings.auth.annotation.CurrentUser;
 import ru.homemadethings.homemadethings.auth.exception.UserLogoutException;
 import ru.homemadethings.homemadethings.auth.model.CustomUserDetails;
@@ -22,10 +27,6 @@ import ru.homemadethings.homemadethings.auth.model.UserDevice;
 import ru.homemadethings.homemadethings.auth.model.payload.LogOutRequest;
 import ru.homemadethings.homemadethings.auth.model.payload.RegistrationRequest;
 import ru.homemadethings.homemadethings.auth.repository.UserRepository;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -134,5 +135,25 @@ public class UserService {
 
         logger.info("Removing refresh token associated with device [" + userDevice + "]");
         refreshTokenService.deleteById(userDevice.getRefreshToken().getId());
+    }
+
+    public Optional<User> updateFirstName(CustomUserDetails currentUser, String newFirstName) throws NotFoundException {
+        User userFromDb = userRepository
+                .findByEmail(currentUser.getEmail())
+                .orElseThrow(() -> new NotFoundException("User with email" + currentUser.getEmail() + " not found"));
+
+        userFromDb.setFirstName(newFirstName);
+
+        return Optional.of(userRepository.save(userFromDb));
+    }
+
+    public Optional<User> updateLastName(CustomUserDetails currentUser, String newLastName) throws NotFoundException {
+        User userFromDb = userRepository
+                .findByEmail(currentUser.getEmail())
+                .orElseThrow(() -> new NotFoundException("User with email" + currentUser.getEmail() + " not found"));
+
+        userFromDb.setLastName(newLastName);
+
+        return Optional.of(userRepository.save(userFromDb));
     }
 }

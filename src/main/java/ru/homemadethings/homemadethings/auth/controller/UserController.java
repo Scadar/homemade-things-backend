@@ -13,19 +13,10 @@
  */
 package ru.homemadethings.homemadethings.auth.controller;
 
-import ru.homemadethings.homemadethings.auth.annotation.CurrentUser;
-import ru.homemadethings.homemadethings.auth.event.OnUserAccountChangeEvent;
-import ru.homemadethings.homemadethings.auth.event.OnUserLogoutSuccessEvent;
-import ru.homemadethings.homemadethings.auth.exception.UpdatePasswordException;
-import ru.homemadethings.homemadethings.auth.model.CustomUserDetails;
-import ru.homemadethings.homemadethings.auth.model.payload.ApiResponse;
-import ru.homemadethings.homemadethings.auth.model.payload.LogOutRequest;
-import ru.homemadethings.homemadethings.auth.model.payload.UpdatePasswordRequest;
-import ru.homemadethings.homemadethings.auth.service.AuthService;
-import ru.homemadethings.homemadethings.auth.service.UserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import javassist.NotFoundException;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -33,6 +24,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import ru.homemadethings.homemadethings.auth.annotation.CurrentUser;
+import ru.homemadethings.homemadethings.auth.event.OnUserAccountChangeEvent;
+import ru.homemadethings.homemadethings.auth.event.OnUserLogoutSuccessEvent;
+import ru.homemadethings.homemadethings.auth.exception.UpdatePasswordException;
+import ru.homemadethings.homemadethings.auth.model.CustomUserDetails;
+import ru.homemadethings.homemadethings.auth.model.payload.*;
+import ru.homemadethings.homemadethings.auth.service.AuthService;
+import ru.homemadethings.homemadethings.auth.service.UserService;
 
 import javax.validation.Valid;
 
@@ -110,5 +109,27 @@ public class UserController {
         OnUserLogoutSuccessEvent logoutSuccessEvent = new OnUserLogoutSuccessEvent(customUserDetails.getEmail(), credentials.toString(), logOutRequest);
         applicationEventPublisher.publishEvent(logoutSuccessEvent);
         return ResponseEntity.ok(new ApiResponse(true, "Log out successful"));
+    }
+
+    @PutMapping("/first-name")
+    public ResponseEntity<ApiResponse> updateFirstName(@CurrentUser CustomUserDetails customUserDetails, @RequestBody UpdateFirstNameRequest updateFirstNameRequest) throws NotFoundException {
+        return userService
+                .updateFirstName(customUserDetails, updateFirstNameRequest.getFirstName())
+                .map(user -> {
+                    logger.info("Update firstName with user id=" + user.getId() + " is successful");
+                    return ResponseEntity.ok(new ApiResponse(true, "Update firstName successful"));
+                })
+                .orElseThrow(() -> new RuntimeException("Update firstName exception"));
+    }
+
+    @PutMapping("/last-name")
+    public ResponseEntity<ApiResponse> updateLastName(@CurrentUser CustomUserDetails customUserDetails, @RequestBody UpdateLastNameRequest updateLastNameRequest) throws NotFoundException {
+        return userService
+                .updateLastName(customUserDetails, updateLastNameRequest.getLastName())
+                .map(user -> {
+                    logger.info("Update lastName with user id=" + user.getId() + " is successful");
+                    return ResponseEntity.ok(new ApiResponse(true, "Update lastName successful"));
+                })
+                .orElseThrow(() -> new RuntimeException("Update lastName exception"));
     }
 }
