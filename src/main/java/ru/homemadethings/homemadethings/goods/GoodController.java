@@ -29,7 +29,13 @@ public class GoodController {
 
     @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE })
     @ApiModelProperty
-    public ResponseEntity<Good> addGood(@CurrentUser CustomUserDetails user, @ModelAttribute GoodRequest good, @RequestParam List<MultipartFile> images) {
+    public ResponseEntity<Good> addGood(@CurrentUser CustomUserDetails user, @ModelAttribute GoodRequest good, @RequestParam(required = false) List<MultipartFile> images) {
         return ResponseEntity.ok(goodService.addGood(user, good, images));
+    }
+
+    @GetMapping
+    @ApiModelProperty
+    public ResponseEntity<List<Good>> addGood(@CurrentUser CustomUserDetails user) {
+        return ResponseEntity.ok(goodService.getGoodsByUser(user));
     }
 }

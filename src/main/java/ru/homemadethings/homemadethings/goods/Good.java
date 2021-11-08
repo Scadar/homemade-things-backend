@@ -1,7 +1,10 @@
 package ru.homemadethings.homemadethings.goods;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import ru.homemadethings.homemadethings.auth.model.User;
+import ru.homemadethings.homemadethings.good_images.GoodImage;
 import ru.homemadethings.homemadethings.specifications.Specification;
 
 import javax.persistence.*;
@@ -34,4 +37,11 @@ public class Good {
     @OneToMany(mappedBy = "good", orphanRemoval = true)
     private List<Specification> specifications;
 
+    @OneToMany(mappedBy = "good", orphanRemoval = true)
+    private List<GoodImage> goodImages;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_user_id")
+    @JsonIgnore
+    private User user;
 }

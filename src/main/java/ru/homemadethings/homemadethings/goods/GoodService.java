@@ -8,6 +8,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.homemadethings.homemadethings.auth.model.CustomUserDetails;
+import ru.homemadethings.homemadethings.auth.model.User;
+import ru.homemadethings.homemadethings.auth.repository.UserRepository;
+import ru.homemadethings.homemadethings.good_images.GoodImage;
+import ru.homemadethings.homemadethings.good_images.GoodImageService;
 import ru.homemadethings.homemadethings.specifications.Specification;
 import ru.homemadethings.homemadethings.specifications.SpecificationRepository;
 
@@ -26,22 +30,28 @@ public class GoodService {
 
     private final GoodRepository goodRepository;
     private final SpecificationRepository specificationRepository;
+    private final GoodImageService goodImageService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public GoodService(GoodRepository goodRepository, SpecificationRepository specificationRepository) {
+    public GoodService(GoodRepository goodRepository, SpecificationRepository specificationRepository, GoodImageService goodImageService, UserRepository userRepository) {
         this.goodRepository = goodRepository;
         this.specificationRepository = specificationRepository;
+        this.goodImageService = goodImageService;
+        this.userRepository = userRepository;
     }
 
     public Page<Good> findGoodsWithPagination(int offset, int pageSize) {
         return goodRepository.findAll(PageRequest.of(offset, pageSize));
     }
 
-    //115 532
     @Transactional
     public Good addGood(CustomUserDetails user, GoodRequest good, List<MultipartFile> images) {
 
         List<Specification> specifications = specificationRepository.saveAll(parseSpecifications(good.getSpecifications()));
+        User userFromDb = userRepository
+                .findByEmail(user.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Good newGood = new Good();
         newGood.setTitle(good.getTitle());
@@ -49,32 +59,43 @@ public class GoodService {
         newGood.setDiscount(good.getDiscount());
         newGood.setDescription(good.getDescription());
         newGood.setSpecifications(specifications);
+        newGood.setUser(userFromDb);
 
         Good goodFromDb = goodRepository.save(newGood);
 
-        try {
-            images.forEach(img -> {
-                File uploadDir = new File(uploadPath + "/" + user.getId() + "/" + goodFromDb.getId());
+        List<GoodImage> goodImages = new ArrayList<>();
 
-                if (!uploadDir.exists()) {
-                    uploadDir.mkdirs();
-                }
+        if(images != null) {
+            try {
+                images.forEach(img -> {
+                    File uploadDir = new File(uploadPath + "/" + user.getId() + "/" + goodFromDb.getId());
 
-                String uuidFile = UUID.randomUUID().toString();
-                String resultFileName = uuidFile + "." + img.getOriginalFilename();
+                    if (!uploadDir.exists()) {
+                        uploadDir.mkdirs();
+                    }
 
-                try {
-                    img.transferTo(new File(uploadDir + "/" + resultFileName));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    throw new RuntimeException("Не удалось записать картинки");
-                }
+                    String uuidFile = UUID.randomUUID().toString();
+                    String resultFileName = uuidFile + "." + img.getOriginalFilename();
 
-            });
-        } catch (Exception error) {
-            throw new RuntimeException("Не удалось записать картинки");
+                    try {
+                        img.transferTo(new File(uploadDir + "/" + resultFileName));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        throw new RuntimeException("Не удалось записать картинки");
+                    }
+
+                    GoodImage goodImage = new GoodImage();
+                    goodImage.setPath(uploadDir + "/" + resultFileName);
+                    goodImage.setTitle(img.getOriginalFilename());
+                    goodImage.setGood(goodFromDb);
+                    goodImages.add(goodImageService.save(goodImage));
+                });
+            } catch (Exception error) {
+                throw new RuntimeException("Не удалось записать картинки");
+            }
         }
 
+        goodFromDb.setGoodImages(goodImages);
 
         return goodFromDb;
     }
@@ -89,5 +110,9 @@ public class GoodService {
             result.add(specification);
         });
         return result;
+    }
+
+    public List<Good> getGoodsByUser(CustomUserDetails user) {
+        return goodRepository.findAllByUser(user);
     }
 }

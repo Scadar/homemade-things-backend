@@ -61,8 +61,8 @@ public class UserController {
      */
     @GetMapping("/me")
     @ApiOperation(value = "Returns the current user profile")
-    public void getUserProfile(@CurrentUser CustomUserDetails currentUser) {
-        logger.info(currentUser.getEmail() + " has role: " + currentUser.getRoles());
+    public void getUserProfile() {
+
     }
 
     /**
