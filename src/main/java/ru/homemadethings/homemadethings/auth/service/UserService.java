@@ -20,10 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.homemadethings.homemadethings.auth.annotation.CurrentUser;
 import ru.homemadethings.homemadethings.auth.exception.UserLogoutException;
-import ru.homemadethings.homemadethings.auth.model.CustomUserDetails;
-import ru.homemadethings.homemadethings.auth.model.Role;
-import ru.homemadethings.homemadethings.auth.model.User;
-import ru.homemadethings.homemadethings.auth.model.UserDevice;
+import ru.homemadethings.homemadethings.auth.model.*;
 import ru.homemadethings.homemadethings.auth.model.payload.LogOutRequest;
 import ru.homemadethings.homemadethings.auth.model.payload.RegistrationRequest;
 import ru.homemadethings.homemadethings.auth.repository.UserRepository;
@@ -103,7 +100,7 @@ public class UserService {
         newUser.setEmail(registerRequest.getEmail());
         newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         newUser.setUsername(registerRequest.getUsername());
-        newUser.addRoles(getRolesForNewUser(isNewUserAsAdmin));
+        newUser.addRole(getRoleForNewUser(isNewUserAsAdmin));
         newUser.setActive(true);
         newUser.setEmailVerified(false);
         return newUser;
@@ -114,13 +111,8 @@ public class UserService {
      *
      * @return list of roles for the new user
      */
-    private Set<Role> getRolesForNewUser(Boolean isToBeMadeAdmin) {
-        Set<Role> newUserRoles = new HashSet<>(roleService.findAll());
-        if (!isToBeMadeAdmin) {
-            newUserRoles.removeIf(Role::isAdminRole);
-        }
-        logger.info("Setting user roles: " + newUserRoles);
-        return newUserRoles;
+    private Role getRoleForNewUser(Boolean isToBeMadeAdmin) {
+        return roleService.findByRoleName(RoleName.ROLE_USER);
     }
 
     /**

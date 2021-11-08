@@ -29,6 +29,7 @@ import ru.homemadethings.homemadethings.auth.event.OnUserAccountChangeEvent;
 import ru.homemadethings.homemadethings.auth.event.OnUserLogoutSuccessEvent;
 import ru.homemadethings.homemadethings.auth.exception.UpdatePasswordException;
 import ru.homemadethings.homemadethings.auth.model.CustomUserDetails;
+import ru.homemadethings.homemadethings.auth.model.User;
 import ru.homemadethings.homemadethings.auth.model.payload.*;
 import ru.homemadethings.homemadethings.auth.service.AuthService;
 import ru.homemadethings.homemadethings.auth.service.UserService;
@@ -112,23 +113,23 @@ public class UserController {
     }
 
     @PutMapping("/first-name")
-    public ResponseEntity<ApiResponse> updateFirstName(@CurrentUser CustomUserDetails customUserDetails, @RequestBody UpdateFirstNameRequest updateFirstNameRequest) throws NotFoundException {
+    public ResponseEntity<User> updateFirstName(@CurrentUser CustomUserDetails customUserDetails, @RequestBody UpdateFirstNameRequest updateFirstNameRequest) throws NotFoundException {
         return userService
                 .updateFirstName(customUserDetails, updateFirstNameRequest.getFirstName())
                 .map(user -> {
                     logger.info("Update firstName with user id=" + user.getId() + " is successful");
-                    return ResponseEntity.ok(new ApiResponse(true, "Update firstName successful"));
+                    return ResponseEntity.ok(user);
                 })
                 .orElseThrow(() -> new RuntimeException("Update firstName exception"));
     }
 
     @PutMapping("/last-name")
-    public ResponseEntity<ApiResponse> updateLastName(@CurrentUser CustomUserDetails customUserDetails, @RequestBody UpdateLastNameRequest updateLastNameRequest) throws NotFoundException {
+    public ResponseEntity<User> updateLastName(@CurrentUser CustomUserDetails customUserDetails, @RequestBody UpdateLastNameRequest updateLastNameRequest) throws NotFoundException {
         return userService
                 .updateLastName(customUserDetails, updateLastNameRequest.getLastName())
                 .map(user -> {
                     logger.info("Update lastName with user id=" + user.getId() + " is successful");
-                    return ResponseEntity.ok(new ApiResponse(true, "Update lastName successful"));
+                    return ResponseEntity.ok(user);
                 })
                 .orElseThrow(() -> new RuntimeException("Update lastName exception"));
     }
