@@ -48,7 +48,6 @@ public class GoodService {
     @Transactional
     public Good addGood(CustomUserDetails user, GoodRequest good, List<MultipartFile> images) {
 
-        List<Specification> specifications = specificationRepository.saveAll(parseSpecifications(good.getSpecifications()));
         User userFromDb = userRepository
                 .findByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -58,10 +57,19 @@ public class GoodService {
         newGood.setPrice(good.getPrice());
         newGood.setDiscount(good.getDiscount());
         newGood.setDescription(good.getDescription());
-        newGood.setSpecifications(specifications);
         newGood.setUser(userFromDb);
 
         Good goodFromDb = goodRepository.save(newGood);
+
+        List<Specification> specifications = parseSpecifications(good.getSpecifications());
+
+        specifications.forEach(s -> {
+            s.setGood(goodFromDb);
+        });
+
+        List<Specification> specificationsFromDb = specificationRepository.saveAll(specifications);
+
+        goodFromDb.setSpecifications(specificationsFromDb);
 
         List<GoodImage> goodImages = new ArrayList<>();
 
