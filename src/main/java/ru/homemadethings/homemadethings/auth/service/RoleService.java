@@ -69,4 +69,8 @@ public class RoleService {
         userRepository.save(user);
     }
 
+    public Role findByRoleName(RoleName roleName){
+        return roleRepository.findByRole(roleName).orElseThrow(() -> new RuntimeException("Role not found"));
+    }
+
 }

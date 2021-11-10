@@ -8,6 +8,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.homemadethings.homemadethings.auth.model.CustomUserDetails;
+import ru.homemadethings.homemadethings.auth.model.User;
+import ru.homemadethings.homemadethings.auth.repository.UserRepository;
+import ru.homemadethings.homemadethings.good_images.GoodImage;
+import ru.homemadethings.homemadethings.good_images.GoodImageService;
 import ru.homemadethings.homemadethings.specifications.Specification;
 import ru.homemadethings.homemadethings.specifications.SpecificationRepository;
 
@@ -26,57 +30,101 @@ public class GoodService {
 
     private final GoodRepository goodRepository;
     private final SpecificationRepository specificationRepository;
+    private final GoodImageService goodImageService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public GoodService(GoodRepository goodRepository, SpecificationRepository specificationRepository) {
+    public GoodService(GoodRepository goodRepository, SpecificationRepository specificationRepository, GoodImageService goodImageService, UserRepository userRepository) {
         this.goodRepository = goodRepository;
         this.specificationRepository = specificationRepository;
+        this.goodImageService = goodImageService;
+        this.userRepository = userRepository;
     }
 
     public Page<Good> findGoodsWithPagination(int offset, int pageSize) {
         return goodRepository.findAll(PageRequest.of(offset, pageSize));
     }
 
-    //115 532
     @Transactional
     public Good addGood(CustomUserDetails user, GoodRequest good, List<MultipartFile> images) {
 
-        List<Specification> specifications = specificationRepository.saveAll(parseSpecifications(good.getSpecifications()));
+        User userFromDb = userRepository
+                .findByEmail(user.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Good newGood = new Good();
         newGood.setTitle(good.getTitle());
         newGood.setPrice(good.getPrice());
         newGood.setDiscount(good.getDiscount());
         newGood.setDescription(good.getDescription());
-        newGood.setSpecifications(specifications);
+        newGood.setUser(userFromDb);
 
         Good goodFromDb = goodRepository.save(newGood);
 
-        try {
-            images.forEach(img -> {
-                File uploadDir = new File(uploadPath + "/" + user.getId() + "/" + goodFromDb.getId());
+        List<Specification> specifications = parseSpecifications(good.getSpecifications());
 
-                if (!uploadDir.exists()) {
-                    uploadDir.mkdirs();
-                }
+        specifications.forEach(s -> {
+            s.setGood(goodFromDb);
+        });
 
-                String uuidFile = UUID.randomUUID().toString();
-                String resultFileName = uuidFile + "." + img.getOriginalFilename();
+        List<Specification> specificationsFromDb = specificationRepository.saveAll(specifications);
 
-                try {
-                    img.transferTo(new File(uploadDir + "/" + resultFileName));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    throw new RuntimeException("Не удалось записать картинки");
-                }
+        goodFromDb.setSpecifications(specificationsFromDb);
 
-            });
-        } catch (Exception error) {
-            throw new RuntimeException("Не удалось записать картинки");
+        List<GoodImage> goodImages = new ArrayList<>();
+
+        if (images != null) {
+            try {
+                images.forEach(img -> {
+                    File uploadDir = new File(uploadPath + "/" + user.getId() + "/" + goodFromDb.getId());
+
+                    if (!uploadDir.exists()) {
+                        uploadDir.mkdirs();
+                    }
+
+                    String uuidFile = UUID.randomUUID().toString();
+                    String resultFileName = uuidFile + "." + img.getOriginalFilename();
+
+                    try {
+                        img.transferTo(new File(uploadDir + "/" + resultFileName));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        throw new RuntimeException("Не удалось записать картинки");
+                    }
+
+                    GoodImage goodImage = new GoodImage();
+                    goodImage.setPath(uploadDir + "/" + resultFileName);
+                    goodImage.setTitle(img.getOriginalFilename());
+                    goodImage.setGood(goodFromDb);
+                    goodImages.add(goodImageService.save(goodImage));
+                });
+            } catch (Exception error) {
+                throw new RuntimeException("Не удалось записать картинки");
+            }
         }
 
+        goodFromDb.setGoodImages(goodImages);
 
         return goodFromDb;
+    }
+
+    public List<Good> getGoodsByUser(CustomUserDetails user) {
+        return goodRepository.findAllByUser(user);
+    }
+
+    public void deleteUserGood(CustomUserDetails user, Long goodId) {
+
+        List<Good> userGoods = goodRepository.findAllByUser(user);
+        userGoodsContainsGood(userGoods, goodId);
+
+        goodRepository.deleteById(goodId);
+    }
+
+    private void userGoodsContainsGood(List<Good> userGoods, Long goodId) {
+        userGoods
+                .stream()
+                .filter(ug -> ug.getId().equals(goodId))
+                .findAny().orElseThrow(() -> new RuntimeException("User goods not contains good"));
     }
 
     private List<Specification> parseSpecifications(List<String> specifications) {
