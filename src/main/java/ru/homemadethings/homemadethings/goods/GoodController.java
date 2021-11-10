@@ -23,11 +23,11 @@ public class GoodController {
     }
 
     @GetMapping("/{offset}/{pageSize}")
-    public ResponseEntity<Page<Good>> getGoodsWithSort(@PathVariable int offset, @PathVariable int pageSize){
+    public ResponseEntity<Page<Good>> getGoodsWithSort(@PathVariable int offset, @PathVariable int pageSize) {
         return ResponseEntity.ok(goodService.findGoodsWithPagination(offset, pageSize));
     }
 
-    @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE })
+    @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     @ApiModelProperty
     public ResponseEntity<Good> addGood(@CurrentUser CustomUserDetails user, @ModelAttribute GoodRequest good, @RequestParam(required = false) List<MultipartFile> images) {
         return ResponseEntity.ok(goodService.addGood(user, good, images));
@@ -35,7 +35,13 @@ public class GoodController {
 
     @GetMapping
     @ApiModelProperty
-    public ResponseEntity<List<Good>> addGood(@CurrentUser CustomUserDetails user) {
+    public ResponseEntity<List<Good>> addGoodGoodsByUser(@CurrentUser CustomUserDetails user) {
         return ResponseEntity.ok(goodService.getGoodsByUser(user));
+    }
+
+    @DeleteMapping("/{goodId}")
+    @ApiModelProperty
+    public void deleteUserGood(@CurrentUser CustomUserDetails user, @PathVariable Long goodId) {
+        goodService.deleteUserGood(user, goodId);
     }
 }

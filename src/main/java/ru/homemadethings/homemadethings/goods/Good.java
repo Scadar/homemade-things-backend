@@ -34,10 +34,10 @@ public class Good {
     @NotNull(message = "Description is required")
     private String description;
 
-    @OneToMany(mappedBy = "good", orphanRemoval = true)
+    @OneToMany(mappedBy = "good", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<Specification> specifications;
 
-    @OneToMany(mappedBy = "good", orphanRemoval = true)
+    @OneToMany(mappedBy = "good", orphanRemoval = true, cascade = CascadeType.ALL)
     private List<GoodImage> goodImages;
 
     @ManyToOne(fetch = FetchType.LAZY)

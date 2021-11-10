@@ -73,7 +73,7 @@ public class GoodService {
 
         List<GoodImage> goodImages = new ArrayList<>();
 
-        if(images != null) {
+        if (images != null) {
             try {
                 images.forEach(img -> {
                     File uploadDir = new File(uploadPath + "/" + user.getId() + "/" + goodFromDb.getId());
@@ -108,6 +108,25 @@ public class GoodService {
         return goodFromDb;
     }
 
+    public List<Good> getGoodsByUser(CustomUserDetails user) {
+        return goodRepository.findAllByUser(user);
+    }
+
+    public void deleteUserGood(CustomUserDetails user, Long goodId) {
+
+        List<Good> userGoods = goodRepository.findAllByUser(user);
+        userGoodsContainsGood(userGoods, goodId);
+
+        goodRepository.deleteById(goodId);
+    }
+
+    private void userGoodsContainsGood(List<Good> userGoods, Long goodId) {
+        userGoods
+                .stream()
+                .filter(ug -> ug.getId().equals(goodId))
+                .findAny().orElseThrow(() -> new RuntimeException("User goods not contains good"));
+    }
+
     private List<Specification> parseSpecifications(List<String> specifications) {
         List<Specification> result = new ArrayList<>();
         specifications.forEach(s -> {
@@ -118,9 +137,5 @@ public class GoodService {
             result.add(specification);
         });
         return result;
-    }
-
-    public List<Good> getGoodsByUser(CustomUserDetails user) {
-        return goodRepository.findAllByUser(user);
     }
 }
